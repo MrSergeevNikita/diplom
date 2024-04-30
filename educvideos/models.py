@@ -8,7 +8,7 @@ class Profile(AbstractUser):
     is_student = models.BooleanField(default=False)
     is_teacher = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
-    id_group = models.ForeignKey('Group', on_delete=models.SET_NULL, blank=True, null=True)
+    id_group = models.ManyToManyField('Group', blank=True, null=True)
     email = models.EmailField(unique=True)
     patronymic = models.CharField(max_length=20, null=True, blank=True)
 

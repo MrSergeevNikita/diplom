@@ -10,7 +10,12 @@ class DisciplineSerializer(serializers.ModelSerializer):
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        fields = '__all__'
+        fields = ['id', 'name']
+
+class GroupUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ['name']
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -36,6 +41,18 @@ class ProfileSerializer(serializers.ModelSerializer):
             'password': {'required': False},
             'email': {'required': False}
         }
+    
+    def update(self, instance, validated_data):
+        groups_data = validated_data.pop('groups', None)
+        
+        # Обновляем основные поля профиля
+        instance = super().update(instance, validated_data)
+        
+        # Обновляем связи с группами
+        if groups_data is not None:
+            instance.groups.set(groups_data)
+
+        return instance
 
 class CreateUserSerializer(serializers.ModelSerializer):
     class Meta:
