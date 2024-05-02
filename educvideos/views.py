@@ -230,7 +230,7 @@ class VideoMaterialsViewset(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if not request.data.get('title') or not request.data.get('file_link') or not request.data.get('discipline')or not request.data.get('id_teacher'):
-            return Response(status=status.HTTP_400_BAD_REQUEST, data='content or user is absent')
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='title or file_link or discipline is absent')
 
         post = VideoMaterialSerializer(data=request.data)
 
@@ -289,7 +289,7 @@ class DisciplineViewset(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if not request.data.get('name_discipline') or not request.data.get('id_teacher'):
-            return Response(status=status.HTTP_400_BAD_REQUEST, data='content or user is absent')
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='name_discipline or id_teacher is absent')
 
         post = DisciplineSerializer(data=request.data)
 
