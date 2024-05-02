@@ -5,11 +5,11 @@ from rest_framework.decorators import permission_classes, api_view, authenticati
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import Profile, Group
+from .models import Profile, Group, VideoMaterials, Discipline, Comment
 from rest_framework.decorators import action
 
 
-from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, GroupUserSerializer
+from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, GroupUserSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer
 
 @api_view()
 @permission_classes([IsAuthenticated])
@@ -35,7 +35,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         email = self.request.query_params.get('email')
         if email:
-            qs = qs.filter(usernemailame=email)
+            qs = qs.filter(email=email)
 
         firstname = self.request.query_params.get('firstname')
         if firstname:
@@ -44,6 +44,8 @@ class UserViewSet(viewsets.ModelViewSet):
         lastname = self.request.query_params.get('lastname')
         if lastname:
             qs = qs.filter(last_name=lastname)
+
+
 
         return qs
     
@@ -86,7 +88,7 @@ class UserViewSet(viewsets.ModelViewSet):
     
     def list(self, request):
         group_name = request.query_params.get('group')
-
+        print(group_name)
         if group_name:
             group_exists_name = Group.objects.filter(name=group_name).exists()
 
@@ -154,6 +156,7 @@ class GroupViewSet(viewsets.ModelViewSet):
         serializer = GroupSerializer(instance, data=request.data)
         if serializer.is_valid():
             updated_group = serializer.save()
+            updated_group.save()
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors)
 
@@ -166,3 +169,196 @@ class GroupViewSet(viewsets.ModelViewSet):
             group.delete()
             return Response(status=status.HTTP_200_OK)
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+class VideoMaterialsViewset(viewsets.ModelViewSet):
+    queryset = VideoMaterials.objects.all()
+    serializer_class = VideoMaterialSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        id = self.request.query_params.get('id')
+        if id:
+            return qs.filter(id=id)
+
+        title = self.request.query_params.get('title')
+        if title:
+            qs = qs.filter(title=title)
+
+        upload_date = self.request.query_params.get('upload_date')
+        if upload_date:
+            qs = qs.filter(upload_date=upload_date)
+        
+        file_link = self.request.query_params.get('file_link')
+        if file_link:
+            qs = qs.filter(file_link=file_link)
+
+        discipline = self.request.query_params.get('discipline')
+        if discipline:
+            qs = qs.filter(discipline=discipline)
+
+        id_teacher = self.request.query_params.get('id_teacher')
+        if id_teacher:
+            qs = qs.filter(id_teacher=id_teacher)
+
+        return qs
+
+    def put(self, request):
+        instance = self.get_object()
+        serializer = VideoMaterials(instance, data=request.data)
+        if serializer.is_valid():
+            updated_group = serializer.save()
+            updated_group.save()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors)
+
+    def delete(self, request):
+        qs = super().get_queryset()
+        post_id = request.GET.get('id')
+
+        if post_id:
+            qs_item = qs.filter(id=post_id)
+
+            if qs_item.count() != 1:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+            qs_item.delete()
+            return Response(status=status.HTTP_200_OK, data='deleted successfully')
+
+        return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
+
+    def create(self, request, *args, **kwargs):
+        if not request.data.get('title') or not request.data.get('file_link') or not request.data.get('discipline')or not request.data.get('id_teacher'):
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='content or user is absent')
+
+        post = VideoMaterialSerializer(data=request.data)
+
+        if post.is_valid():
+            post.save()
+            return Response(data=post.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
+
+
+class DisciplineViewset(viewsets.ModelViewSet):
+    queryset = Discipline.objects.all()
+    serializer_class = DisciplineSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        id = self.request.query_params.get('id')
+        if id:
+            return qs.filter(id=id)
+
+        name_discipline = self.request.query_params.get('name_discipline')
+        if name_discipline:
+            qs = qs.filter(name_discipline=name_discipline)
+
+        id_teacher = self.request.query_params.get('id_teacher')
+        if id_teacher:
+            qs = qs.filter(id_teacher=id_teacher)
+
+        return qs
+
+    def put(self, request):
+        instance = self.get_object()
+        serializer = DisciplineSerializer(instance, data=request.data)
+        if serializer.is_valid():
+            updated_group = serializer.save()
+            updated_group.save()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors)
+
+    def delete(self, request):
+        qs = super().get_queryset()
+        post_id = request.GET.get('id')
+
+        if post_id:
+            qs_item = qs.filter(id=post_id)
+
+            if qs_item.count() != 1:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+            qs_item.delete()
+            return Response(status=status.HTTP_200_OK, data='deleted successfully')
+
+        return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
+
+    def create(self, request, *args, **kwargs):
+        if not request.data.get('name_discipline') or not request.data.get('id_teacher'):
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='content or user is absent')
+
+        post = DisciplineSerializer(data=request.data)
+
+        if post.is_valid():
+            post.save()
+            return Response(data=post.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
+        
+class CommentViewset(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        id = self.request.query_params.get('id')
+        if id:
+            return qs.filter(id=id)
+
+        content = self.request.query_params.get('content')
+        if content:
+            qs = qs.filter(content=content)
+
+        id_teacher = self.request.query_params.get('id_teacher')
+        if id_teacher:
+            qs = qs.filter(id_teacher=id_teacher)
+
+        id_video = self.request.query_params.get('id_video')
+        if id_video:
+            qs = qs.filter(id_video=id_video)
+
+        return qs
+
+    def put(self, request):
+        instance = self.get_object()
+        serializer = CommentSerializer(instance, data=request.data)
+        if serializer.is_valid():
+            updated_group = serializer.save()
+            updated_group.save()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors)
+
+    def delete(self, request):
+        qs = super().get_queryset()
+        post_id = request.GET.get('id')
+
+        if post_id:
+            qs_item = qs.filter(id=post_id)
+
+            if qs_item.count() != 1:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+            qs_item.delete()
+            return Response(status=status.HTTP_200_OK, data='deleted successfully')
+
+        return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
+
+    def create(self, request, *args, **kwargs):
+        if not request.data.get('content') or not request.data.get('id_video'):
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='content, user or id_video is absent')
+        
+        post = CommentSerializer(data=request.data)
+
+        if post.is_valid():
+            post.save()
+            return Response(data=post.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
+
+        

@@ -11,6 +11,7 @@ class Profile(AbstractUser):
     id_group = models.ManyToManyField('Group', blank=True, null=True)
     email = models.EmailField(unique=True)
     patronymic = models.CharField(max_length=20, null=True, blank=True)
+    username = models.CharField(max_length=150, unique=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
