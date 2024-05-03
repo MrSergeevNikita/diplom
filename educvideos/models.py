@@ -27,18 +27,18 @@ class StudentDiscipline(models.Model):
 
 class VideoMaterials(models.Model):
     title = models.CharField(max_length=32)
-    file_link = models.URLField()
+    file_link = models.FileField(upload_to='upload/')
     upload_date = models.DateTimeField(auto_now_add=True)
     id_teacher = models.ForeignKey('Profile', on_delete=models.CASCADE)
-    discipline = models.ForeignKey('Discipline', on_delete=models.CASCADE)
+    id_discipline = models.ForeignKey('Discipline', on_delete=models.CASCADE)
 
 class Comment(models.Model):
     content = models.TextField()
-    id_teacher = models.ForeignKey('Profile', on_delete=models.SET_NULL, blank=True, null=True)
+    id_author = models.ForeignKey('Profile', on_delete=models.SET_NULL, blank=True, null=True)
     id_video = models.ForeignKey('VideoMaterials', on_delete=models.CASCADE)
 
 
 class View(models.Model):
-    video = models.ForeignKey('VideoMaterials', on_delete=models.CASCADE)
-    user = models.ForeignKey('Profile', on_delete=models.CASCADE)
+    id_video = models.ForeignKey('VideoMaterials', on_delete=models.CASCADE)
+    id_user = models.ForeignKey('Profile', on_delete=models.CASCADE)
 

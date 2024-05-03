@@ -42,22 +42,11 @@ class ProfileSerializer(serializers.ModelSerializer):
             'email': {'required': False}
         }
     
-    def update(self, instance, validated_data):
-        groups_data = validated_data.pop('groups', None)
-        
-        # Обновляем основные поля профиля
-        instance = super().update(instance, validated_data)
-        
-        # Обновляем связи с группами
-        if groups_data is not None:
-            instance.groups.set(groups_data)
-
-        return instance
 
 class CreateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['first_name', 'last_name', 'email', 'password']
+        fields = ['first_name', 'last_name', 'email', 'password','is_student', 'is_teacher', 'is_admin', 'id_group']
 
 class WhoAmISerializer(serializers.ModelSerializer):
     class Meta:

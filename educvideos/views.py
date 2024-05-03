@@ -1,15 +1,15 @@
 from django.http import JsonResponse
-from django.shortcuts import render
-from rest_framework import viewsets, status
+from django.shortcuts import get_object_or_404, render
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import permission_classes, api_view, authentication_classes
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import Profile, Group, VideoMaterials, Discipline, Comment
+from .models import Profile, Group, VideoMaterials, Discipline, Comment, View
 from rest_framework.decorators import action
+from django.contrib.auth.hashers import check_password
 
-
-from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, GroupUserSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer
+from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer, ViewSerializer
 
 @api_view()
 @permission_classes([IsAuthenticated])
@@ -44,9 +44,7 @@ class UserViewSet(viewsets.ModelViewSet):
         lastname = self.request.query_params.get('lastname')
         if lastname:
             qs = qs.filter(last_name=lastname)
-
-
-
+            
         return qs
     
     def create(self, request, *args, **kwargs):
@@ -62,29 +60,54 @@ class UserViewSet(viewsets.ModelViewSet):
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    # def update(self, request, *args, **kwargs):
+    #     instance = self.get_object()
+    #     serializer = ProfileSerializer(instance, data=request.data)
+    #     if serializer.is_valid():
+    #         updated_user = serializer.save()
+    #         if 'password' in request.data:
+    #             updated_user.set_password(request.data['password'])
+    #             updated_user.save()
+    #         return Response(data=serializer.data, status=status.HTTP_200_OK)
+    #     return Response(serializer.errors)
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+        pk = kwargs.get('pk')
+
+        # Используем get_object_or_404 для получения объекта профиля (пользователя)
+        instance = get_object_or_404(Profile, pk=pk)
         serializer = ProfileSerializer(instance, data=request.data)
+        password = instance.password
+        print(password)
         if serializer.is_valid():
-            updated_user = serializer.save()
-            if 'password' in request.data:
-                updated_user.set_password(request.data['password'])
-                updated_user.save()
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors)
-
-    def destroy(self, request, *args, **kwargs):
-        queryset = Profile.objects.all()
-
-        if self.get_object().id:
-            user = queryset.filter(id=self.get_object().id)
-            if user.count() != 1:
-                return Response(status=status.HTTP_204_NO_CONTENT)
+            current_password = request.data.get('current_password')
+            new_password = request.data.get('new_password')
+            if new_password:
+                if current_password:
+                    if check_password(current_password, password):
+                        instance.set_password(new_password)
+                        instance.save()
+                    else:
+                        return Response({"error": "Текущий пароль неверен."}, status=status.HTTP_400_BAD_REQUEST)
+                else: return Response({"error": "Не введен текущий пароль."}, status=status.HTTP_400_BAD_REQUEST)
+            else: updated_user = serializer.save()
             
-            user.delete()
-            return Response(status=status.HTTP_200_OK)
-        
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        qs = super().get_queryset()
+        id = request.GET.get('id')
+
+        if id:
+            qs_item = qs.filter(id=id)
+
+            if qs_item.count() != 1:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+            qs_item.delete()
+            return Response(status=status.HTTP_200_OK, data='deleted successfully')
+
+        return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
     
     def list(self, request):
         group_name = request.query_params.get('group')
@@ -102,31 +125,13 @@ class UserViewSet(viewsets.ModelViewSet):
             users = Profile.objects.all()
             serializer = ProfileSerializer(users, many=True)
             return Response(serializer.data)
-        
-
-
-class ProfileGroupViewSet(viewsets.ModelViewSet):
-    queryset = Group.objects.all()
-    serializer_class = GroupUserSerializer
-    http_method_names = ['get']
-
-    def get_queryset(self):
-        id_user = self.request.query_params.get('id_user')
-        
-        if id_user:
-            profile = Profile.objects.get(id=id_user)
-            groups = profile.id_group.all() if profile.id_group else []
-            return groups
-        else:
-            return super().get_queryset()
-        
-
-@authentication_classes([JWTAuthentication])
+    
 
 class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     http_method_names = ['get', 'post', 'put', 'delete']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         queryset = Group.objects.all()
@@ -138,6 +143,17 @@ class GroupViewSet(viewsets.ModelViewSet):
                 pass
             try:
                 queryset = queryset.filter(name=params['name'])
+            except:
+                pass
+            try:
+                id_user = self.request.query_params.get('id_user')
+        
+                if id_user:
+                    profile = Profile.objects.get(id=id_user)
+                    groups = profile.id_group.all() if profile.id_group else []
+                    return groups
+                else:
+                    return super().get_queryset()
             except:
                 pass
         return queryset
@@ -160,20 +176,26 @@ class GroupViewSet(viewsets.ModelViewSet):
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors)
 
-    def destroy(self, request, *args, **kwargs):
-        queryset = Group.objects.all()
-        if self.get_object().id:
-            group = queryset.filter(id=self.get_object().id)
-            if group.count() != 1:
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            group.delete()
-            return Response(status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request):
+        qs = super().get_queryset()
+        id = request.GET.get('id')
 
+        if id:
+            qs_item = qs.filter(id=id)
+
+            if qs_item.count() != 1:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+            qs_item.delete()
+            return Response(status=status.HTTP_200_OK, data='deleted successfully')
+
+        return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
+    
 class VideoMaterialsViewset(viewsets.ModelViewSet):
     queryset = VideoMaterials.objects.all()
     serializer_class = VideoMaterialSerializer
     http_method_names = ['get', 'post', 'put', 'delete']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -194,9 +216,9 @@ class VideoMaterialsViewset(viewsets.ModelViewSet):
         if file_link:
             qs = qs.filter(file_link=file_link)
 
-        discipline = self.request.query_params.get('discipline')
-        if discipline:
-            qs = qs.filter(discipline=discipline)
+        id_discipline = self.request.query_params.get('id_discipline')
+        if id_discipline:
+            qs = qs.filter(id_discipline=id_discipline)
 
         id_teacher = self.request.query_params.get('id_teacher')
         if id_teacher:
@@ -215,10 +237,10 @@ class VideoMaterialsViewset(viewsets.ModelViewSet):
 
     def delete(self, request):
         qs = super().get_queryset()
-        post_id = request.GET.get('id')
+        id = request.GET.get('id')
 
-        if post_id:
-            qs_item = qs.filter(id=post_id)
+        if id:
+            qs_item = qs.filter(id=id)
 
             if qs_item.count() != 1:
                 return Response(status=status.HTTP_204_NO_CONTENT)
@@ -229,8 +251,8 @@ class VideoMaterialsViewset(viewsets.ModelViewSet):
         return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
 
     def create(self, request, *args, **kwargs):
-        if not request.data.get('title') or not request.data.get('file_link') or not request.data.get('discipline')or not request.data.get('id_teacher'):
-            return Response(status=status.HTTP_400_BAD_REQUEST, data='title or file_link or discipline is absent')
+        if not request.data.get('title') or not request.data.get('id_discipline')or not request.data.get('id_teacher'):
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='title or file_link or id_discipline is absent')
 
         post = VideoMaterialSerializer(data=request.data)
 
@@ -239,12 +261,16 @@ class VideoMaterialsViewset(viewsets.ModelViewSet):
             return Response(data=post.data, status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
+        
+
+        
 
 
 class DisciplineViewset(viewsets.ModelViewSet):
     queryset = Discipline.objects.all()
     serializer_class = DisciplineSerializer
     http_method_names = ['get', 'post', 'put', 'delete']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -274,10 +300,10 @@ class DisciplineViewset(viewsets.ModelViewSet):
 
     def delete(self, request):
         qs = super().get_queryset()
-        post_id = request.GET.get('id')
+        id = request.GET.get('id')
 
-        if post_id:
-            qs_item = qs.filter(id=post_id)
+        if id:
+            qs_item = qs.filter(id=id)
 
             if qs_item.count() != 1:
                 return Response(status=status.HTTP_204_NO_CONTENT)
@@ -303,6 +329,7 @@ class CommentViewset(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     http_method_names = ['get', 'post', 'put', 'delete']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -315,9 +342,9 @@ class CommentViewset(viewsets.ModelViewSet):
         if content:
             qs = qs.filter(content=content)
 
-        id_teacher = self.request.query_params.get('id_teacher')
-        if id_teacher:
-            qs = qs.filter(id_teacher=id_teacher)
+        id_author = self.request.query_params.get('id_author')
+        if id_author:
+            qs = qs.filter(id_author=id_author)
 
         id_video = self.request.query_params.get('id_video')
         if id_video:
@@ -336,10 +363,10 @@ class CommentViewset(viewsets.ModelViewSet):
 
     def delete(self, request):
         qs = super().get_queryset()
-        post_id = request.GET.get('id')
+        id = request.GET.get('id')
 
-        if post_id:
-            qs_item = qs.filter(id=post_id)
+        if id:
+            qs_item = qs.filter(id=id)
 
             if qs_item.count() != 1:
                 return Response(status=status.HTTP_204_NO_CONTENT)
@@ -350,8 +377,8 @@ class CommentViewset(viewsets.ModelViewSet):
         return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
 
     def create(self, request, *args, **kwargs):
-        if not request.data.get('content') or not request.data.get('id_video'):
-            return Response(status=status.HTTP_400_BAD_REQUEST, data='content, user or id_video is absent')
+        if not request.data.get('content') or not request.data.get('id_video') or not request.data.get('id_author'):
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='content, user or id_video or id_author is absent')
         
         post = CommentSerializer(data=request.data)
 
@@ -361,4 +388,54 @@ class CommentViewset(viewsets.ModelViewSet):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
 
+
+class ViewViewset(viewsets.ModelViewSet):
+    queryset = View.objects.all()
+    serializer_class = ViewSerializer
+    http_method_names = ['get', 'post', 'delete']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        id = self.request.query_params.get('id')
+        if id:
+            return qs.filter(id=id)
+
+        id_video = self.request.query_params.get('id_video')
+        if id_video:
+            qs = qs.filter(id_video=id_video)
+
+        id_user = self.request.query_params.get('id_user')
+        if id_user:
+            qs = qs.filter(id_user=id_user)
+
+        return qs
+
+    def delete(self, request):
+        qs = super().get_queryset()
+        id = request.GET.get('id')
+
+        if id:
+            qs_item = qs.filter(id=id)
+
+            if qs_item.count() != 1:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+            qs_item.delete()
+            return Response(status=status.HTTP_200_OK, data='deleted successfully')
+
+        return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
+
+    def create(self, request, *args, **kwargs):
+        if not request.data.get('id_video') or not request.data.get('id_user'):
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='id_video or id_user  is absent')
+        
+        post = ViewSerializer(data=request.data)
+
+        if post.is_valid():
+            post.save()
+            return Response(data=post.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
         
