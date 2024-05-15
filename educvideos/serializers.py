@@ -46,10 +46,10 @@ class ProfileSerializer(serializers.ModelSerializer):
 class CreateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['first_name', 'last_name', 'email', 'password','is_student', 'is_teacher', 'is_admin', 'id_group']
+        fields = ['first_name', 'last_name', 'patronymic', 'email', 'password','is_student', 'is_teacher', 'is_admin', 'id_group']
 
 class WhoAmISerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['first_name', 'last_name','patronymic', 'email', 'is_student', 'is_teacher', 'is_admin', 'id_group']
+        fields = ['id', 'first_name', 'last_name','patronymic', 'email', 'is_student', 'is_teacher', 'is_admin', 'id_group']
         
