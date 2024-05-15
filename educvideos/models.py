@@ -14,7 +14,7 @@ class Profile(AbstractUser):
     username = models.CharField(max_length=150, unique=False)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['username']
 
 class Discipline(models.Model):
     name_discipline = models.CharField(max_length=100)
@@ -27,7 +27,7 @@ class StudentDiscipline(models.Model):
 
 class VideoMaterials(models.Model):
     title = models.CharField(max_length=32)
-    file_link = models.FileField(upload_to='upload/')
+    file_link = models.FileField()
     upload_date = models.DateTimeField(auto_now_add=True)
     id_teacher = models.ForeignKey('Profile', on_delete=models.CASCADE)
     id_discipline = models.ForeignKey('Discipline', on_delete=models.CASCADE)

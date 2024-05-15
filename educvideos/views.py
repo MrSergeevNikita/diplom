@@ -60,16 +60,6 @@ class UserViewSet(viewsets.ModelViewSet):
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # def update(self, request, *args, **kwargs):
-    #     instance = self.get_object()
-    #     serializer = ProfileSerializer(instance, data=request.data)
-    #     if serializer.is_valid():
-    #         updated_user = serializer.save()
-    #         if 'password' in request.data:
-    #             updated_user.set_password(request.data['password'])
-    #             updated_user.save()
-    #         return Response(data=serializer.data, status=status.HTTP_200_OK)
-    #     return Response(serializer.errors)
     def update(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
 
@@ -428,14 +418,15 @@ class ViewViewset(viewsets.ModelViewSet):
         return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
 
     def create(self, request, *args, **kwargs):
-        if not request.data.get('id_video') or not request.data.get('id_user'):
-            return Response(status=status.HTTP_400_BAD_REQUEST, data='id_video or id_user  is absent')
-        
-        post = ViewSerializer(data=request.data)
+        if not request.data.get('title') or not request.data.get('id_discipline')or not request.data.get('id_teacher'):
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='title or file_link or id_discipline is absent')
+
+        post = VideoMaterialSerializer(data=request.data)
+        print(request.data)
 
         if post.is_valid():
             post.save()
             return Response(data=post.data, status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
-        
+              
