@@ -5,11 +5,11 @@ from rest_framework.decorators import permission_classes, api_view, authenticati
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import Profile, Group, VideoMaterials, Discipline, Comment, View
+from .models import Profile, Group, VideoMaterials, Discipline, Comment, View, StudentDiscipline
 from rest_framework.decorators import action
 from django.contrib.auth.hashers import check_password
 
-from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer, ViewSerializer
+from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer, ViewSerializer, StudentDisciplineSerializer
 
 @api_view()
 @permission_classes([IsAuthenticated])
@@ -101,7 +101,7 @@ class UserViewSet(viewsets.ModelViewSet):
     
     def list(self, request):
         group_name = request.query_params.get('group')
-        print(group_name)
+
         if group_name:
             group_exists_name = Group.objects.filter(name=group_name).exists()
 
@@ -430,3 +430,61 @@ class ViewViewset(viewsets.ModelViewSet):
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
               
+class StudentDisciplineViewset(viewsets.ModelViewSet):
+    queryset = StudentDiscipline.objects.all()
+    serializer_class = StudentDisciplineSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        id = self.request.query_params.get('id')
+        if id:
+            return qs.filter(id=id)
+
+        id_student = self.request.query_params.get('id_student')
+        if id_student:
+            return qs.filter(id_student=id_student)
+            
+        id_discipline = self.request.query_params.get('id_discipline')
+        if id_discipline:
+            qs = qs.filter(id_discipline=id_discipline)
+        
+        return qs
+
+    def put(self, request):
+        instance = self.get_object()
+        serializer = StudentDisciplineSerializer(instance, data=request.data)
+        if serializer.is_valid():
+            updated_group = serializer.save()
+            updated_group.save()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors)
+
+    def delete(self, request):
+        qs = super().get_queryset()
+        id = request.GET.get('id')
+
+        if id:
+            qs_item = qs.filter(id=id)
+
+            if qs_item.count() != 1:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+            qs_item.delete()
+            return Response(status=status.HTTP_200_OK, data='deleted successfully')
+
+        return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
+
+    def create(self, request, *args, **kwargs):
+        if not request.data.get('id_student') or not request.data.get('id_discipline') :
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='id_discipline or id_student is absent')
+        
+        post = StudentDisciplineSerializer(data=request.data)
+
+        if post.is_valid():
+            post.save()
+            return Response(data=post.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
