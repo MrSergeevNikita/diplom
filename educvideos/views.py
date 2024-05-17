@@ -214,7 +214,7 @@ class VideoMaterialsViewset(viewsets.ModelViewSet):
         if id_teacher:
             qs = qs.filter(id_teacher=id_teacher)
 
-        return qs
+        return qs.order_by('-upload_date')
 
     def put(self, request):
         instance = self.get_object()
