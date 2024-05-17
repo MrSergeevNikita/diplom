@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 class Group(models.Model):
     name = models.CharField(max_length=50)
@@ -36,6 +37,7 @@ class Comment(models.Model):
     content = models.TextField()
     id_author = models.ForeignKey('Profile', on_delete=models.SET_NULL, blank=True, null=True)
     id_video = models.ForeignKey('VideoMaterials', on_delete=models.CASCADE)
+    creation_date = models.DateTimeField(auto_now_add=True)
 
 
 class View(models.Model):

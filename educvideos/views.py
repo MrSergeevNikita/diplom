@@ -340,7 +340,7 @@ class CommentViewset(viewsets.ModelViewSet):
         if id_video:
             qs = qs.filter(id_video=id_video)
 
-        return qs
+        return qs.order_by('-creation_date')
 
     def put(self, request):
         instance = self.get_object()

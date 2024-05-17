@@ -17,10 +17,6 @@ class GroupUserSerializer(serializers.ModelSerializer):
         model = Group
         fields = ['name']
 
-class CommentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = '__all__'
 
 class VideoMaterialSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,7 +44,17 @@ class ProfileSerializer(serializers.ModelSerializer):
             'password': {'required': False},
             'email': {'required': False}
         }
-    
+
+class ProfileShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['first_name', 'last_name', 'patronymic']
+
+class CommentSerializer(serializers.ModelSerializer):
+    fio  = ProfileShortSerializer(source='id_author')
+    class Meta:
+        model = Comment
+        fields = '__all__' 
 
 class CreateUserSerializer(serializers.ModelSerializer):
     class Meta:
