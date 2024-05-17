@@ -51,7 +51,7 @@ class ProfileShortSerializer(serializers.ModelSerializer):
         fields = ['first_name', 'last_name', 'patronymic']
 
 class CommentSerializer(serializers.ModelSerializer):
-    author  = ProfileShortSerializer(source='id_author', read_only=True)
+    fio  = ProfileShortSerializer(source='id_author', read_only=True)
     class Meta:
         model = Comment
         fields = '__all__' 

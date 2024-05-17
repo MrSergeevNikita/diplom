@@ -478,8 +478,8 @@ class StudentDisciplineViewset(viewsets.ModelViewSet):
         return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
 
     def create(self, request, *args, **kwargs):
-        # if not request.data.get('id_student') or not request.data.get('id_discipline') :
-        #     return Response(status=status.HTTP_400_BAD_REQUEST, data='id_discipline or id_student is absent')
+        if not request.data.get('id_student') or not request.data.get('id_discipline') :
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='id_discipline or id_student is absent')
         
         post = StudentDisciplineSerializer(data=request.data)
 
