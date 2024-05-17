@@ -29,7 +29,7 @@ class ViewSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class StudentDisciplineSerializer(serializers.ModelSerializer):
-    discipline = DisciplineSerializer(source='id_discipline')
+    discipline = DisciplineSerializer(source='id_discipline', read_only = True)
     
     class Meta:
         model = StudentDiscipline
@@ -51,7 +51,7 @@ class ProfileShortSerializer(serializers.ModelSerializer):
         fields = ['first_name', 'last_name', 'patronymic']
 
 class CommentSerializer(serializers.ModelSerializer):
-    fio  = ProfileShortSerializer(source='id_author')
+    author  = ProfileShortSerializer(source='id_author', read_only=True)
     class Meta:
         model = Comment
         fields = '__all__' 
