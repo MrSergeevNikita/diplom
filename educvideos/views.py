@@ -5,7 +5,7 @@ from rest_framework.decorators import permission_classes, api_view, authenticati
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import Profile, Group, VideoMaterials, Discipline, Comment, View, StudentDiscipline
+from .models import Profile, Group, VideoMaterials, Discipline, Comment, View, StudentDiscipline, VideoLike
 from rest_framework.decorators import action
 from django.contrib.auth.hashers import check_password
 import subprocess
@@ -14,7 +14,7 @@ import os
 import random
 import subprocess
 
-from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer, ViewSerializer, StudentDisciplineSerializer
+from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer, ViewSerializer, StudentDisciplineSerializer, VideoLikeSerializer
 
 @api_view()
 @permission_classes([IsAuthenticated])
@@ -523,6 +523,70 @@ class StudentDisciplineViewset(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data='id_discipline or id_student is absent')
         
         post = StudentDisciplineSerializer(data=request.data)
+
+        if post.is_valid():
+            post.save()
+            return Response(data=post.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
+        
+
+class VideoLikeViewset(viewsets.ModelViewSet):
+    queryset = VideoLike.objects.all()
+    serializer_class = VideoLikeSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        id = self.request.query_params.get('id')
+        if id:
+            return qs.filter(id=id)
+
+        id_user = self.request.query_params.get('id_user')
+        if id_user:
+            return qs.filter(id_user=id_user)
+            
+        id_video = self.request.query_params.get('id_video')
+        if id_video:
+            qs = qs.filter(id_video=id_video)
+
+        reaction = self.request.query_params.get('reaction')
+        if reaction:
+            qs = qs.filter(reaction=reaction)
+        
+        return qs
+
+    def put(self, request):
+        instance = self.get_object()
+        serializer = VideoLikeSerializer(instance, data=request.data)
+        if serializer.is_valid():
+            updated_like = serializer.save()
+            updated_like.save()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors)
+
+    def delete(self, request):
+        qs = super().get_queryset()
+        id = request.GET.get('id')
+
+        if id:
+            qs_item = qs.filter(id=id)
+
+            if qs_item.count() != 1:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+            qs_item.delete()
+            return Response(status=status.HTTP_200_OK, data='deleted successfully')
+
+        return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
+
+    def create(self, request, *args, **kwargs):
+        if not request.data.get('id_user') or not request.data.get('id_video') or not request.data.get('reaction')  :
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='id_user, id_video or reaction is absent')
+        
+        post = VideoLikeSerializer(data=request.data)
 
         if post.is_valid():
             post.save()

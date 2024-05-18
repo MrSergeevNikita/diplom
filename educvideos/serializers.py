@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Group, Profile, Discipline, VideoMaterials, Comment, View, StudentDiscipline
+from .models import Group, Profile, Discipline, VideoMaterials, Comment, View, StudentDiscipline, VideoLike
 
 
 class DisciplineSerializer(serializers.ModelSerializer):
@@ -65,4 +65,9 @@ class WhoAmISerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['id', 'first_name', 'last_name','patronymic', 'email', 'is_student', 'is_teacher', 'is_admin', 'id_group']
+
+class VideoLikeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VideoLike
+        fields = '__all__'
         

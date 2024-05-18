@@ -40,7 +40,6 @@ class VideoMaterials(models.Model):
     description = models.TextField(default='')
 
 
-    
 class Comment(models.Model):
     content = models.TextField()
     id_author = models.ForeignKey('Profile', on_delete=models.SET_NULL, blank=True, null=True)
@@ -51,4 +50,19 @@ class Comment(models.Model):
 class View(models.Model):
     id_video = models.ForeignKey('VideoMaterials', on_delete=models.CASCADE)
     id_user = models.ForeignKey('Profile', on_delete=models.CASCADE)
+
+class VideoLike(models.Model):
+    LIKE = 'like'
+    DISLIKE = 'dislike'
+    REACTION_CHOICES = [
+        (LIKE, 'Like'),
+        (DISLIKE, 'Dislike'),
+    ]
+
+    id_video = models.ForeignKey('VideoMaterials', on_delete=models.CASCADE)
+    id_user = models.ForeignKey('Profile', on_delete=models.CASCADE)
+    reaction = models.CharField(max_length=7, choices=REACTION_CHOICES)
+
+    class Meta:
+        unique_together = ('id_user', 'id_video')
 
