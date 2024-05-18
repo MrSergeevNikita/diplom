@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Group, Profile, Discipline, VideoMaterials, Comment, View, StudentDiscipline, VideoLike
+from .models import Group, GroupDiscipline, Profile, Discipline, VideoMaterials, Comment, View, StudentDiscipline, VideoLike
 
 
 class DisciplineSerializer(serializers.ModelSerializer):
@@ -35,6 +35,13 @@ class StudentDisciplineSerializer(serializers.ModelSerializer):
         model = StudentDiscipline
         fields = '__all__'
 
+class GroupDisciplineSerializer(serializers.ModelSerializer):
+    discipline = DisciplineSerializer(source='id_discipline', read_only = True)
+    
+    class Meta:
+        model = GroupDiscipline
+        fields = '__all__'
+
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
@@ -45,6 +52,16 @@ class ProfileSerializer(serializers.ModelSerializer):
             'email': {'required': False}
         }
         depth=1
+
+class ProfileSerializerTwo(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = '__all__'
+        extra_kwargs = {
+            'username': {'required': False},
+            'password': {'required': False},
+            'email': {'required': False}
+        }
 
 class ProfileShortSerializer(serializers.ModelSerializer):
     class Meta:

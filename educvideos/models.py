@@ -29,10 +29,15 @@ class Discipline(models.Model):
 class StudentDiscipline(models.Model):
     id_student = models.ForeignKey('Profile', on_delete=models.CASCADE)
     id_discipline = models.ForeignKey('Discipline', on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ('id_student', 'id_discipline')
 
-# class GroupDiscipline(models.Model):
-#     id_group = models.ForeignKey('Group', on_delete=models.CASCADE)
-#     id_discipline = models.ForeignKey('Discipline', on_delete=models.CASCADE)
+class GroupDiscipline(models.Model):
+    id_group = models.ForeignKey('Group', on_delete=models.CASCADE)
+    id_discipline = models.ForeignKey('Discipline', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('id_group', 'id_discipline')
 
 class VideoMaterials(models.Model):
     title = models.CharField(max_length=32)
@@ -54,6 +59,7 @@ class Comment(models.Model):
 class View(models.Model):
     id_video = models.ForeignKey('VideoMaterials', on_delete=models.CASCADE)
     id_user = models.ForeignKey('Profile', on_delete=models.CASCADE)
+    
 
 class VideoLike(models.Model):
     LIKE = 'like'
