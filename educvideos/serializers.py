@@ -67,7 +67,15 @@ class WhoAmISerializer(serializers.ModelSerializer):
         fields = ['id', 'first_name', 'last_name','patronymic', 'email', 'is_student', 'is_teacher', 'is_admin', 'id_group']
 
 class VideoLikeSerializer(serializers.ModelSerializer):
+    # fio  = ProfileShortSerializer(source='id_user', read_only=True)
+    video = VideoMaterialSerializer(source='id_video', read_only=True)
     class Meta:
         model = VideoLike
         fields = '__all__'
         
+class SecondVideoLikeSerializer(serializers.ModelSerializer):
+    fio  = ProfileShortSerializer(source='id_user', read_only=True)
+    # video = VideoMaterialSerializer(source='id_video', read_only=True)
+    class Meta:
+        model = VideoLike
+        fields = '__all__'

@@ -54,9 +54,11 @@ class View(models.Model):
 class VideoLike(models.Model):
     LIKE = 'like'
     DISLIKE = 'dislike'
+    NONE = 'none'
     REACTION_CHOICES = [
         (LIKE, 'Like'),
         (DISLIKE, 'Dislike'),
+        (NONE, 'None')
     ]
 
     id_video = models.ForeignKey('VideoMaterials', on_delete=models.CASCADE)

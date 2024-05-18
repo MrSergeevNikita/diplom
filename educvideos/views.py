@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import Profile, Group, VideoMaterials, Discipline, Comment, View, StudentDiscipline, VideoLike
 from rest_framework.decorators import action
+from django.db.models import Count, Q
 from django.contrib.auth.hashers import check_password
 import subprocess
 from django.conf import settings
@@ -14,7 +15,7 @@ import os
 import random
 import subprocess
 
-from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer, ViewSerializer, StudentDisciplineSerializer, VideoLikeSerializer
+from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer, ViewSerializer, StudentDisciplineSerializer, VideoLikeSerializer, SecondVideoLikeSerializer
 
 @api_view()
 @permission_classes([IsAuthenticated])
@@ -538,25 +539,45 @@ class VideoLikeViewset(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        qs = super().get_queryset()
-
-        id = self.request.query_params.get('id')
-        if id:
-            return qs.filter(id=id)
-
+        queryset = self.queryset
         id_user = self.request.query_params.get('id_user')
-        if id_user:
-            return qs.filter(id_user=id_user)
-            
         id_video = self.request.query_params.get('id_video')
-        if id_video:
-            qs = qs.filter(id_video=id_video)
 
-        reaction = self.request.query_params.get('reaction')
-        if reaction:
-            qs = qs.filter(reaction=reaction)
+        if id_user:
+            queryset = queryset.filter(id_user=id_user)
+        if id_video:
+            queryset = queryset.filter(id_video=id_video)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        likes_count = queryset.filter(reaction=VideoLike.LIKE).count()
+        dislikes_count = queryset.filter(reaction=VideoLike.DISLIKE).count()
+
+        response_data = {
+            'likes_count': likes_count,
+            'dislikes_count': dislikes_count
+        }
+
+        # Если указан id_user или id_video, добавляем данные в ответ
+        id_user = self.request.query_params.get('id_user')
+        id_video = self.request.query_params.get('id_video')
+        if id_user:
+            queryset = self.get_queryset().filter(id_user=id_user)
+            serializer = VideoLikeSerializer(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
-        return qs
+        
+        if id_video:
+            response_data = {
+                'likes_count': likes_count,
+                'dislikes_count': dislikes_count
+            }
+            serializer = SecondVideoLikeSerializer(queryset, many=True)
+            response_data['data'] = serializer.data
+            
+            return Response(response_data, status=status.HTTP_200_OK)
 
     def put(self, request):
         instance = self.get_object()
