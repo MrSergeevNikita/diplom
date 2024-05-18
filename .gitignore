@@ -8,3 +8,7 @@ Lib
 Scripts
 pyvenv.cfg
 template
+.env
+nginx
+docker-compose.yml
+Dockerfile

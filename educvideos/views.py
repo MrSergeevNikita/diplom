@@ -49,9 +49,18 @@ class UserViewSet(viewsets.ModelViewSet):
 
         lastname = self.request.query_params.get('lastname')
         if lastname:
-            qs = qs.filter(last_name=lastname)
-            
+            qs = qs.filter(last_name__icontains=lastname)
+
+        group = self.request.query_params.get('group')
+        if group:
+            qs = qs.filter(id_group=group)
+
+        group_name = self.request.query_params.get('id_group.name')
+        if group_name:
+            qs = qs.filter(id_group__name=group_name)
+        
         return qs
+            
     
     def create(self, request, *args, **kwargs):
             serializer = CreateUserSerializer(data=request.data)
@@ -105,22 +114,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
     
-    def list(self, request):
-        group_name = request.query_params.get('group')
-
-        if group_name:
-            group_exists_name = Group.objects.filter(name=group_name).exists()
-
-            if group_exists_name:
-                users = Profile.objects.filter(id_group__name=group_name)
-                serializer = WhoAmISerializer(users, many=True)
-                return Response(serializer.data)
-            else:
-                return Response({'error': 'Group with specified name does not exist'}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            users = Profile.objects.all()
-            serializer = ProfileSerializer(users, many=True)
-            return Response(serializer.data)
     
 
 class GroupViewSet(viewsets.ModelViewSet):
@@ -130,29 +123,50 @@ class GroupViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        queryset = Group.objects.all()
-        if self.request.method == 'GET':
-            params = self.request.query_params.dict()
-            try:
-                queryset = queryset.filter(id=params['id'])
-            except:
-                pass
-            try:
-                queryset = queryset.filter(name=params['name'])
-            except:
-                pass
-            try:
-                id_user = self.request.query_params.get('id_user')
+        qs = super().get_queryset()
+
+        id = self.request.query_params.get('id')
+        if id:
+            return qs.filter(id=id)
+
+        name = self.request.query_params.get('name')
+        if name:
+            qs = qs.filter(name=name)
+
+        id_user = self.request.query_params.get('id_user')
+        if id_user:
+            profile = Profile.objects.get(id=id_user)
+            groups = profile.id_group.all() if profile.id_group else []
+            qs = groups
+        else:
+             qs = super().get_queryset()
+            
+        return qs
+
+    # def get_queryset(self):
+    #     queryset = Group.objects.all()
+    #     if self.request.method == 'GET':
+    #         params = self.request.query_params.dict()
+    #         try:
+    #             queryset = queryset.filter(id=params['id'])
+    #         except:
+    #             pass
+    #         try:
+    #             queryset = queryset.filter(name=params['name'])
+    #         except:
+    #             pass
+    #         try:
+    #             id_user = self.request.query_params.get('id_user')
         
-                if id_user:
-                    profile = Profile.objects.get(id=id_user)
-                    groups = profile.id_group.all() if profile.id_group else []
-                    return groups
-                else:
-                    return super().get_queryset()
-            except:
-                pass
-        return queryset
+    #             if id_user:
+    #                 profile = Profile.objects.get(id=id_user)
+    #                 groups = profile.id_group.all() if profile.id_group else []
+    #                 return groups
+    #             else:
+    #                 return super().get_queryset()
+    #         except:
+    #             pass
+    #     return queryset
 
     def create(self, request, *args, **kwargs):
         if not request.data.get('name'):
@@ -560,7 +574,7 @@ class VideoLikeViewset(viewsets.ModelViewSet):
             'dislikes_count': dislikes_count
         }
 
-        # Если указан id_user или id_video, добавляем данные в ответ
+ 
         id_user = self.request.query_params.get('id_user')
         id_video = self.request.query_params.get('id_video')
         if id_user:
