@@ -42,6 +42,7 @@ class GroupDisciplineSerializer(serializers.ModelSerializer):
         model = GroupDiscipline
         fields = '__all__'
 
+
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile

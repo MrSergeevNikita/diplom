@@ -11,6 +11,8 @@ from django.db.models import Count, Q
 from django.contrib.auth.hashers import check_password
 import subprocess
 from django.conf import settings
+from rest_framework.exceptions import ValidationError
+from django.db.models import Min
 import os
 import random
 import subprocess
@@ -465,22 +467,22 @@ class StudentDisciplineViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'put', 'delete']
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    # def get_queryset(self):
-    #     qs = super().get_queryset()
+    def get_queryset(self):
+        qs = super().get_queryset()
 
-    #     id = self.request.query_params.get('id')
-    #     if id:
-    #         return qs.filter(id=id)
+        id = self.request.query_params.get('id')
+        if id:
+            return qs.filter(id=id)
 
-    #     id_student = self.request.query_params.get('id_student')
-    #     if id_student:
-    #         return qs.filter(id_student=id_student)
+        id_student = self.request.query_params.get('id_student')
+        if id_student:
+            return qs.filter(id_student=id_student)
             
-    #     id_discipline = self.request.query_params.get('id_discipline')
-    #     if id_discipline:
-    #         qs = qs.filter(id_discipline=id_discipline)
+        id_discipline = self.request.query_params.get('id_discipline')
+        if id_discipline:
+            qs = qs.filter(id_discipline=id_discipline)
         
-    #     return qs
+        return qs
 
     def put(self, request):
         instance = self.get_object()
@@ -610,6 +612,12 @@ class GroupDisciplineViewset(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        allowed_params = {'id', 'id_group', 'id_discipline'}
+        request_params = set(self.request.query_params.keys())
+
+        invalid_params = request_params - allowed_params
+        if invalid_params:
+            raise ValidationError(f"Invalid parameters: {', '.join(invalid_params)}")
 
         id = self.request.query_params.get('id')
         if id:
@@ -617,14 +625,18 @@ class GroupDisciplineViewset(viewsets.ModelViewSet):
 
         id_group = self.request.query_params.get('id_group')
         if id_group:
-            return qs.filter(id_group=id_group)
+            id_group_list = id_group.split(',')
+            qs = qs.filter(id_group__in=id_group_list)
+            subquery = qs.values('id_discipline').annotate(min_id=Min('id')).values('min_id')
+
+            qs = qs.filter(id__in=subquery)
             
         id_discipline = self.request.query_params.get('id_discipline')
         if id_discipline:
             qs = qs.filter(id_discipline=id_discipline)
-        
-        return qs
 
+        return qs
+    
     def put(self, request):
         instance = self.get_object()
         serializer = GroupDisciplineSerializer(instance, data=request.data)
@@ -660,3 +672,4 @@ class GroupDisciplineViewset(viewsets.ModelViewSet):
             return Response(data=post.data, status=status.HTTP_201_CREATED)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
+        

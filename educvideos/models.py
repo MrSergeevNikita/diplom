@@ -21,6 +21,8 @@ class Profile(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
+
+
 class Discipline(models.Model):
     name_discipline = models.CharField(max_length=100)
     id_teacher = models.ForeignKey('Profile', on_delete=models.CASCADE, related_name='disciplines_taught')
