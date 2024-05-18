@@ -8,6 +8,11 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import Profile, Group, VideoMaterials, Discipline, Comment, View, StudentDiscipline
 from rest_framework.decorators import action
 from django.contrib.auth.hashers import check_password
+import subprocess
+from django.conf import settings
+import os
+import random
+import subprocess
 
 from .serializers import ProfileSerializer, CreateUserSerializer, WhoAmISerializer, GroupSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer, ViewSerializer, StudentDisciplineSerializer
 
@@ -241,18 +246,54 @@ class VideoMaterialsViewset(viewsets.ModelViewSet):
         return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
 
     def create(self, request, *args, **kwargs):
-        if not request.data.get('title') or not request.data.get('id_discipline')or not request.data.get('id_teacher'):
+        if not request.data.get('title') or not request.data.get('id_discipline')or not request.data.get('id_teacher') or not request.data.get('file_link'):
             return Response(status=status.HTTP_400_BAD_REQUEST, data='title or file_link or id_discipline is absent')
-
-        post = VideoMaterialSerializer(data=request.data)
-
-        if post.is_valid():
-            post.save()
-            return Response(data=post.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
         
+        serializer = VideoMaterialSerializer(data=request.data)
+        if serializer.is_valid():
+            instance = serializer.save()
+            video_path = instance.file_link.path
 
+            try:
+                cmd = [
+                    'ffprobe',
+                    '-v', 'error',
+                    '-show_entries', 'format=duration',
+                    '-of', 'default=noprint_wrappers=1:nokey=1',
+                    video_path
+                ]
+                result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                duration = float(result.stdout)
+
+                random_second = random.uniform(1, duration)
+
+                preview_name = os.path.splitext(os.path.basename(video_path))[0] + '_preview.jpg'
+                preview_path = os.path.join(settings.MEDIA_ROOT, 'video_previews', preview_name)
+
+                os.makedirs(os.path.dirname(preview_path), exist_ok=True)
+
+                cmd = [
+                    'ffmpeg',
+                    '-ss', str(random_second),
+                    '-i', video_path,
+                    '-vframes', '1',
+                    preview_path
+                ]
+                subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+
+                instance.preview_image.name = os.path.join('video_previews', preview_name)
+                instance.save()
+
+            except subprocess.CalledProcessError as e:
+                print(f"Error generating preview: {e}")
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
         
 
 
