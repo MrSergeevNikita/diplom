@@ -78,11 +78,9 @@ class UserViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
 
-        # Используем get_object_or_404 для получения объекта профиля (пользователя)
         instance = get_object_or_404(Profile, pk=pk)
         serializer = ProfileSerializer(instance, data=request.data)
         password = instance.password
-        print(password)
         if serializer.is_valid():
             current_password = request.data.get('current_password')
             new_password = request.data.get('new_password')
@@ -94,8 +92,8 @@ class UserViewSet(viewsets.ModelViewSet):
                     else:
                         return Response({"error": "Текущий пароль неверен."}, status=status.HTTP_400_BAD_REQUEST)
                 else: return Response({"error": "Не введен текущий пароль."}, status=status.HTTP_400_BAD_REQUEST)
-            else: updated_user = serializer.save()
-            
+            else:
+                serializer.save()
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -142,31 +140,6 @@ class GroupViewSet(viewsets.ModelViewSet):
              qs = super().get_queryset()
             
         return qs
-
-    # def get_queryset(self):
-    #     queryset = Group.objects.all()
-    #     if self.request.method == 'GET':
-    #         params = self.request.query_params.dict()
-    #         try:
-    #             queryset = queryset.filter(id=params['id'])
-    #         except:
-    #             pass
-    #         try:
-    #             queryset = queryset.filter(name=params['name'])
-    #         except:
-    #             pass
-    #         try:
-    #             id_user = self.request.query_params.get('id_user')
-        
-    #             if id_user:
-    #                 profile = Profile.objects.get(id=id_user)
-    #                 groups = profile.id_group.all() if profile.id_group else []
-    #                 return groups
-    #             else:
-    #                 return super().get_queryset()
-    #         except:
-    #             pass
-    #     return queryset
 
     def create(self, request, *args, **kwargs):
         if not request.data.get('name'):

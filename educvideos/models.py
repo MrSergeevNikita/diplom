@@ -30,6 +30,10 @@ class StudentDiscipline(models.Model):
     id_student = models.ForeignKey('Profile', on_delete=models.CASCADE)
     id_discipline = models.ForeignKey('Discipline', on_delete=models.CASCADE)
 
+# class GroupDiscipline(models.Model):
+#     id_group = models.ForeignKey('Group', on_delete=models.CASCADE)
+#     id_discipline = models.ForeignKey('Discipline', on_delete=models.CASCADE)
+
 class VideoMaterials(models.Model):
     title = models.CharField(max_length=32)
     file_link = models.FileField(upload_to='videos/')
