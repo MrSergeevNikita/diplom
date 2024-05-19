@@ -23,11 +23,6 @@ class VideoMaterialSerializer(serializers.ModelSerializer):
         model = VideoMaterials
         fields = '__all__'
 
-class ViewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = View
-        fields = '__all__'
-
 class StudentDisciplineSerializer(serializers.ModelSerializer):
     discipline = DisciplineSerializer(source='id_discipline', read_only = True)
     
@@ -95,4 +90,10 @@ class SecondVideoLikeSerializer(serializers.ModelSerializer):
     fio  = ProfileShortSerializer(source='id_user', read_only=True)
     class Meta:
         model = VideoLike
+        fields = '__all__'
+
+class ViewSerializer(serializers.ModelSerializer):
+    fio  = ProfileShortSerializer(source='id_user', read_only=True)
+    class Meta:
+        model = View
         fields = '__all__'

@@ -9,6 +9,7 @@ import subprocess
 class Group(models.Model):
     name = models.CharField(max_length=50)
 
+
 class Profile(AbstractUser):
     is_student = models.BooleanField(default=False)
     is_teacher = models.BooleanField(default=False)
@@ -61,6 +62,8 @@ class Comment(models.Model):
 class View(models.Model):
     id_video = models.ForeignKey('VideoMaterials', on_delete=models.CASCADE)
     id_user = models.ForeignKey('Profile', on_delete=models.CASCADE)
+    class Meta:
+        unique_together = ('id_user', 'id_video')
     
 
 class VideoLike(models.Model):

@@ -449,10 +449,10 @@ class ViewViewset(viewsets.ModelViewSet):
         return Response(status=status.HTTP_400_BAD_REQUEST, data='invalid id value')
 
     def create(self, request, *args, **kwargs):
-        if not request.data.get('title') or not request.data.get('id_discipline')or not request.data.get('id_teacher'):
-            return Response(status=status.HTTP_400_BAD_REQUEST, data='title or file_link or id_discipline is absent')
+        if not request.data.get('id_video') or not request.data.get('id_user'):
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='id_user or id_video is absent')
 
-        post = VideoMaterialSerializer(data=request.data)
+        post = ViewSerializer(data=request.data)
         print(request.data)
 
         if post.is_valid():
@@ -552,6 +552,7 @@ class VideoLikeViewset(viewsets.ModelViewSet):
  
         id_user = self.request.query_params.get('id_user')
         id_video = self.request.query_params.get('id_video')
+        info = VideoLikeSerializer(queryset, many=True)
         if id_user:
             queryset = self.get_queryset().filter(id_user=id_user)
             serializer = VideoLikeSerializer(queryset, many=True)
@@ -564,9 +565,10 @@ class VideoLikeViewset(viewsets.ModelViewSet):
                 'dislikes_count': dislikes_count
             }
             serializer = SecondVideoLikeSerializer(queryset, many=True)
-            response_data['data'] = serializer.data
-            
+            response_data['data'] = serializer.data     
             return Response(response_data, status=status.HTTP_200_OK)
+        
+        return Response(info.data, status=status.HTTP_200_OK)
 
     def put(self, request):
         instance = self.get_object()
