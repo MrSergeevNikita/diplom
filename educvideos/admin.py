@@ -38,12 +38,13 @@ class VideoMaterialsAdmin(admin.ModelAdmin):
     date_hierarchy = 'upload_date'  
     
 
-admin.site.register(VideoMaterials, VideoMaterialsAdmin)
+
 
 
 admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Discipline, DisciplineAdmin)
+admin.site.register(VideoMaterials, VideoMaterialsAdmin)
 
 
 admin.site.register(View)

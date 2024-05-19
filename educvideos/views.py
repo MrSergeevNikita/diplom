@@ -191,7 +191,7 @@ class VideoMaterialsViewset(viewsets.ModelViewSet):
 
         title = self.request.query_params.get('title')
         if title:
-            qs = qs.filter(title=title)
+            qs = qs.filter(title__icontains=title)
 
         upload_date = self.request.query_params.get('upload_date')
         if upload_date:
