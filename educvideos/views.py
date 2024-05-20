@@ -620,6 +620,10 @@ class GroupDisciplineViewset(viewsets.ModelViewSet):
         invalid_params = request_params - allowed_params
         if invalid_params:
             raise ValidationError(f"Invalid parameters: {', '.join(invalid_params)}")
+        
+        id_group = self.request.query_params.get('id_group')
+        if not id_group:
+            raise ValidationError("Missing required parameter: id_group")
 
         id = self.request.query_params.get('id')
         if id:
@@ -632,6 +636,8 @@ class GroupDisciplineViewset(viewsets.ModelViewSet):
             subquery = qs.values('id_discipline').annotate(min_id=Min('id')).values('min_id')
 
             qs = qs.filter(id__in=subquery)
+        
+        else: return qs
             
         id_discipline = self.request.query_params.get('id_discipline')
         if id_discipline:

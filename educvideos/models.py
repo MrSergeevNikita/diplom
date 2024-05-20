@@ -11,7 +11,7 @@ class Group(models.Model):
 
 
 class Profile(AbstractUser):
-    is_student = models.BooleanField(default=False)
+    is_student = models.BooleanField(default=True)
     is_teacher = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     id_group = models.ManyToManyField('Group', blank=True, null=True)
