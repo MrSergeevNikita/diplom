@@ -99,3 +99,4 @@ class Request(models.Model):
     title = models.CharField(max_length=50)
     content = models.CharField(max_length=350)
     status = models.CharField(max_length=10, choices=REACTION_CHOICES, default='Pending')
+    creation_date = models.DateTimeField(auto_now_add=True)

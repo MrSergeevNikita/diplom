@@ -702,7 +702,7 @@ class RequestViewset(viewsets.ModelViewSet):
         if status:
             qs = qs.filter(status=status)
         
-        return qs
+        return qs.order_by('-creation_date')
     
     def put(self, request):
         instance = self.get_object()
