@@ -5,7 +5,7 @@ from rest_framework.decorators import permission_classes, api_view, authenticati
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import GroupDiscipline, Profile, Group, VideoMaterials, Discipline, Comment, View, StudentDiscipline, VideoLike
+from .models import GroupDiscipline, Profile, Group, Request, VideoMaterials, Discipline, Comment, View, StudentDiscipline, VideoLike
 from rest_framework.decorators import action
 from django.db.models import Count, Q
 from django.contrib.auth.hashers import check_password
@@ -17,7 +17,7 @@ import os
 import random
 import subprocess
 
-from .serializers import GroupDisciplineSerializer, ProfileSerializer, CreateUserSerializer, ProfileSerializerTwo, WhoAmISerializer, GroupSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer, ViewSerializer, StudentDisciplineSerializer, VideoLikeSerializer, SecondVideoLikeSerializer
+from .serializers import GroupDisciplineSerializer, ProfileSerializer, CreateUserSerializer, ProfileSerializerTwo, RequestSerializer, WhoAmISerializer, GroupSerializer, VideoMaterialSerializer, DisciplineSerializer, CommentSerializer, ViewSerializer, StudentDisciplineSerializer, VideoLikeSerializer, SecondVideoLikeSerializer
 
 @api_view()
 @permission_classes([IsAuthenticated])
@@ -621,9 +621,9 @@ class GroupDisciplineViewset(viewsets.ModelViewSet):
         if invalid_params:
             raise ValidationError(f"Invalid parameters: {', '.join(invalid_params)}")
         
-        id_group = self.request.query_params.get('id_group')
-        if not id_group:
-            raise ValidationError("Missing required parameter: id_group")
+        if 'id_group' in self.request.query_params and not self.request.query_params.get('id_group'):
+            raise ValidationError("Parameter 'id_group' is provided but no value is set.")
+        
 
         id = self.request.query_params.get('id')
         if id:
@@ -674,6 +674,50 @@ class GroupDisciplineViewset(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data='id_discipline or id_group is absent')
         
         post = GroupDisciplineSerializer(data=request.data)
+
+        if post.is_valid():
+            post.save()
+            return Response(data=post.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='unable to parse the body')
+        
+class RequestViewset(viewsets.ModelViewSet):
+    queryset = Request.objects.all()
+    serializer_class = RequestSerializer
+    http_method_names = ['get', 'post', 'put']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        id = self.request.query_params.get('id')
+        if id:
+            return qs.filter(id=id)
+
+        id_user = self.request.query_params.get('id_user')
+        if id_user:
+            return qs.filter(id_user=id_user)
+            
+        status = self.request.query_params.get('status')
+        if status:
+            qs = qs.filter(status=status)
+        
+        return qs
+    
+    def put(self, request):
+        instance = self.get_object()
+        serializer = RequestSerializer(instance, data=request.data)
+        if serializer.is_valid():
+            updated_group = serializer.save()
+            updated_group.save()
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors)
+
+    def create(self, request, *args, **kwargs):
+        if not request.data.get('id_user') or not request.data.get('title') or not request.data.get('content'):
+            return Response(status=status.HTTP_400_BAD_REQUEST, data='id_user, title or content is absent')
+        
+        post = RequestSerializer(data=request.data)
 
         if post.is_valid():
             post.save()

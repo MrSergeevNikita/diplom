@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Group, GroupDiscipline, Profile, Discipline, VideoMaterials, Comment, View, StudentDiscipline, VideoLike
+from .models import Group, GroupDiscipline, Profile, Discipline, Request, VideoMaterials, Comment, View, StudentDiscipline, VideoLike
 
 
 class DisciplineSerializer(serializers.ModelSerializer):
@@ -96,4 +96,10 @@ class ViewSerializer(serializers.ModelSerializer):
     fio  = ProfileShortSerializer(source='id_user', read_only=True)
     class Meta:
         model = View
+        fields = '__all__'
+
+class RequestSerializer(serializers.ModelSerializer):
+    fio  = ProfileShortSerializer(source='id_user', read_only=True)
+    class Meta:
+        model = Request
         fields = '__all__'

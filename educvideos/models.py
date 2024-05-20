@@ -83,3 +83,17 @@ class VideoLike(models.Model):
     class Meta:
         unique_together = ('id_user', 'id_video')
 
+class Request(models.Model):
+    PENDING = 'Pending'
+    DONE = 'Done'
+    DENIED = 'Denied'
+    REACTION_CHOICES = [
+        (PENDING, 'Pending'),
+        (DONE, 'Done'),
+        (DENIED, 'Denied')
+    ]
+
+    id_user = models.ForeignKey('Profile', on_delete=models.CASCADE)
+    title = models.CharField(max_length=50)
+    content = models.CharField(max_length=350)
+    status = models.CharField(max_length=10, choices=REACTION_CHOICES, default='Pending')

@@ -114,4 +114,4 @@ admin.site.register(Discipline, DisciplineAdmin)
 admin.site.register(VideoMaterials, VideoMaterialsAdmin)
 admin.site.register(View, ViewAdmin)
 admin.site.register(Comment, CommentAdmin)
-
+admin.site.register(Request)
