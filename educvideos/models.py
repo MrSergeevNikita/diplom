@@ -87,10 +87,12 @@ class Request(models.Model):
     PENDING = 'Pending'
     DONE = 'Done'
     DENIED = 'Denied'
+    DELETED = 'Deleted'
     REACTION_CHOICES = [
         (PENDING, 'Pending'),
         (DONE, 'Done'),
-        (DENIED, 'Denied')
+        (DENIED, 'Denied'),
+        (DELETED, 'Deleted')
     ]
 
     id_user = models.ForeignKey('Profile', on_delete=models.CASCADE)
